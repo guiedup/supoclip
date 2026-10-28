@@ -438,6 +438,23 @@ async def test_process_task_clears_existing_clips_before_rendering():
 
 
 @pytest.mark.asyncio
+async def test_task_run_timestamps_remain_utc_outside_utc_system_timezone():
+    service = build_task_service()
+    await service.process_task(
+        task_id="task-1", url="https://www.youtube.com/watch?v=demo", source_type="youtube",
+    )
+    found = set()
+    for call in service.task_repo.update_task_runtime_metadata.await_args_list:
+        for field in ("started_at", "completed_at"):
+            value = call.kwargs.get(field)
+            if value is not None:
+                assert value.tzinfo is not None
+                assert value.utcoffset().total_seconds() == 0
+                found.add(field)
+    assert found == {"started_at", "completed_at"}
+
+
+@pytest.mark.asyncio
 async def test_process_task_ignores_completion_email_failures(monkeypatch):
     service = build_task_service()
     service.task_repo.get_task_notification_context = AsyncMock(

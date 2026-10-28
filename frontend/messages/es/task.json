@@ -53,7 +53,7 @@
   "failedTitle": "Error de procesamiento",
   "failedBody": "Hubo un error al procesar tu video. Reanuda para reintentar desde donde se detuvo, o prueba con otro video.",
   "youtubeAccessTitle": "YouTube bloqueó esta importación",
-  "youtubeAccessBody": "YouTube exige iniciar sesión o una verificación humana para esta descarga. Reanudar ahora repetiría el mismo intento. Obtén el archivo original y súbelo desde la página de creación.",
+  "youtubeAccessBody": "Abre el vídeo en el navegador y completa el inicio de sesión o la verificación solicitada por YouTube. Actualiza la sesión local de YouTube y pulsa Reanudar para volver a intentar la importación.",
   "backHome": "Volver al inicio",
   "noClipsTitle": "No se generaron clips",
   "noClipsBody": "La generación terminó, pero no se crearon clips. Es posible que el video no tuviera contenido adecuado para recortar.",

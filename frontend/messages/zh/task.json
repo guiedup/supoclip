@@ -53,7 +53,7 @@
   "failedTitle": "处理失败",
   "failedBody": "处理视频时出错。可以继续，从停止的地方重试，或换一个视频。",
   "youtubeAccessTitle": "YouTube 已阻止此次导入",
-  "youtubeAccessBody": "YouTube 要求登录或人工验证才能下载。现在继续只会重复同一次尝试。请获取原始视频文件并在创建页面上传。",
+  "youtubeAccessBody": "请在浏览器中打开视频并完成 YouTube 要求的登录或验证。更新本地 YouTube 会话后，点击继续以重试导入。",
   "backHome": "返回首页",
   "noClipsTitle": "没有生成片段",
   "noClipsBody": "生成已完成，但没有产出片段。这段视频可能没有适合剪辑的内容。",

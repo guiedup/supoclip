@@ -872,9 +872,19 @@ class VideoService:
                 await progress_callback(10, "Downloading video...", "processing")
 
             if source_type == "youtube":
-                video_info = await async_get_youtube_video_info(
-                    url, task_id=task_id, raise_on_access_error=True
+                video_id = get_youtube_video_id(url)
+                cached_full = (
+                    await run_in_thread(cached_full_media, video_id) if video_id else None
                 )
+                if cached_full:
+                    # A previously imported local file must remain usable when
+                    # the browser session later expires. Enforce duration limits
+                    # using the actual media rather than contacting YouTube.
+                    video_info = {"duration": await run_in_thread(ffprobe_duration, cached_full)}
+                else:
+                    video_info = await async_get_youtube_video_info(
+                        url, task_id=task_id, raise_on_access_error=True
+                    )
                 source_duration = None
                 if video_info:
                     duration = video_info.get("duration", 0)
@@ -886,12 +896,8 @@ class VideoService:
                             f"Maximum allowed duration is {mins} minutes."
                         )
 
-                video_id = get_youtube_video_id(url)
                 job_budget = ByteBudget(
                     getattr(runtime_config, "youtube_download_max_bytes", 2_000_000_000)
-                )
-                cached_full = (
-                    await run_in_thread(cached_full_media, video_id) if video_id else None
                 )
                 # Audio first only when a proxy is configured and we do not
                 # already have the full source cached. Uploads never reach here.

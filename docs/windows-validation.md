@@ -101,12 +101,13 @@ normal no Windows, sem o modo standalone de contêiner; a opção Linux original
 - Tiny cometeu erros de reconhecimento em termos técnicos; revisar legendas é necessário.
 - O vídeo sintético não valida enquadramento de rosto, múltiplos falantes ou conteúdo real longo.
 - YouTube, B-roll, publicação social, e-mail, S3 e edição por conversa não fizeram parte
-  deste fluxo completo. O código de armazenamento e edição manual teve testes de regressão.
+  do fluxo sintético inicial. A importação real do YouTube foi testada depois,
+  conforme a seção seguinte. Armazenamento e edição manual tiveram testes de regressão.
 - O port Redis inclui runtime MSYS2; não é Win32 puro nem uma distribuição oficial Linux.
 - A memória livre inicial estava baixa por outros aplicativos abertos. O perfil usa
   um trabalho por vez e o modelo apenas no worker que transcreve.
 
-## Correção de diagnóstico de importação do YouTube
+## Correção inicial de diagnóstico do YouTube (antes de conectar a sessão)
 
 Um uso posterior encontrou a resposta de verificação humana do YouTube antes de
 qualquer transcrição. O erro genérico de download ocultava essa causa e a página
@@ -135,3 +136,91 @@ sem retomar automaticamente, enquanto falhas comuns preservam a retomada.
 O build de produção, lint e TypeScript passaram. A instância local foi reiniciada
 e a tarefa afetada foi conferida visualmente com o erro específico. A importação
 desse vídeo permaneceu bloqueada; nenhum resultado de cortes foi declarado para ele.
+
+## Importação autenticada do vídeo real do YouTube
+
+Após o usuário concluir o login/reprodução no Firefox, uma exportação local
+restrita a cookies do YouTube permitiu consultar e baixar o vídeo
+`ftnNVxAQ8C4`: **Culto Noturno | Guiados pelo Senhor no desconhecido - Josue 3-4 -
+Rev. Vitor Paulo | 18/10/2026**. Não houve alteração do 9Router, proxy ou envio
+de cookies a outro serviço.
+
+- Duração medida: **4690,014 s** (1h18min10s).
+- Vídeo: H.264, **1280×720**; áudio: Opus no contêiner MP4.
+- Tamanho do arquivo completo: **266.703.366 bytes**; download/adoção no cache:
+  **51,7 s** neste teste.
+- Tarefa criada pela interface real a partir do link `/live/`, persistido como
+  URL canônica `/watch?v=`: `724f0883-4dd9-4cdb-9322-f0350b1adc80`.
+- Perfil do teste: Whisper **base**, idioma **pt**, CPU com duas threads;
+  análise/seleção pelo **MyCombo** do 9Router local, uma tarefa por vez.
+
+A decodificação completa de áudio e vídeo do arquivo baixado passou com
+`ffmpeg -xerror`, sem mensagens de erro. Whisper base concluiu a transcrição
+em aproximadamente **16 minutos** na CPU i5-12450H com duas threads:
+**8.947 palavras**, idioma `pt`, de **134,659 s** a **4689,330 s**. A inspeção
+dos tempos não encontrou intervalos invertidos, ordem regressiva nem palavras
+fora da duração da fonte. **309 palavras têm duração zero** no alinhamento
+produzido pelo Whisper; os tempos foram preservados, sem interpolação artificial.
+Isso e eventuais erros de reconhecimento exigem revisão editorial das legendas.
+
+O pico observado do working set do processo do worker foi aproximadamente
+**2,75 GiB** até o fim da transcrição. Não é a memória total do aplicativo ou do PC.
+A interface mantém 30% durante toda a etapa de reconhecimento e avança ao final;
+não há checkpoint persistente por janela do Whisper. Se essa etapa for
+interrompida antes de gravar o resultado, o áudio precisa ser reconhecido novamente.
+O arquivo original e a transcrição concluída ficam no cache para as etapas seguintes.
+
+**97 testes de backend** passaram no conjunto de sessão local, acesso ao YouTube,
+download, duração e limpeza. O subconjunto de **11 testes** da sessão passou
+novamente após forçar verificação TLS e proteger os avisos do parser contra
+vazamento de conteúdo. Lint e TypeScript também passaram. A atualização da sessão
+pelo launcher foi exercitada durante a transcrição sem interromper o trabalho.
+
+MyCombo analisou **oito janelas sobrepostas**, reuniu e reavaliou **21 candidatos**
+e produziu os dois clipes finais. O modelo retornado pelo 9Router foi
+`gpt-6.1-sol`, usando a configuração `openai:MyCombo` já existente.
+
+| Título do clipe | Duração do MP4 |
+| --- | ---: |
+| Você lembra das dores, mas esquece dos livramentos | 52,6 s |
+| O maior feito não foi uma casa | 45,9 s |
+
+Ambos os arquivos renderizados passaram pela decodificação integral com
+`ffmpeg -xerror`, com vídeo **H.264 1080×1920** e áudio **AAC**. A tarefa chegou
+a `completed`/100%. A verificação pela interface real incluiu abertura do player,
+reprodução efetiva, download do original e exportação do primeiro clipe pelo
+preset **YouTube Shorts**. O MP4 exportado tem **52,6 s**, **16.618.813 bytes**,
+áudio presente e RMS medido de aproximadamente **0,182**; passou novamente pela
+decodificação integral. O layout móvel de 390×844 não apresentou rolagem horizontal.
+
+A inspeção visual confirmou pregador enquadrado em 9:16, legendas incorporadas
+e destaque de palavras. A fonte THEBOLDFONT não contém todos os acentos usados;
+o render utilizou o fallback existente **TikTokSans-Bold**. Há erros de ASR,
+incluindo formas como `resgator` e uma passagem do Salmo 103 reconhecida
+incorretamente. **Os clipes exigem revisão das legendas antes de publicação.**
+Pontuações atribuídas pelo modelo não são previsão de desempenho no YouTube.
+
+Os MP4s foram copiados para `%USERPROFILE%\Videos\SupoClip\ftnNVxAQ8C4-724f0883\`.
+O primeiro arquivo usa a exportação Shorts testada; o segundo usa o MP4 original
+renderizado, também compatível com 1080×1920/H.264/AAC.
+As evidências técnicas, capturas e arquivos de teste permanecem em
+`.local/validation/`, fora do Git, assim como a sessão do YouTube.
+
+Depois de concluir todos os trabalhos, a compilação final de produção passou,
+incluindo lint e TypeScript. A orientação de autenticação agora permite retomar
+explicitamente depois de atualizar a sessão; o backend continua interrompendo
+tentativas automáticas diante de exigência de verificação.
+Os **dois testes de navegador** passaram contra esse build: orientação de sessão
+com retomada explícita e recuperação de falhas comuns. Após a reinicialização,
+foram confirmados novamente frontend/API HTTP 200, Redis PING e heartbeat ARQ novo.
+A página dos dois clipes e a reprodução foram conferidas após esse reinício;
+o editor também abriu a lista de palavras/tempos para revisão das legendas.
+
+Na conferência final foi detectado um desvio de **+10.800 s** ao enviar um
+`datetime` UTC sem timezone ao PostgreSQL pelo asyncpg no fuso local. O início
+e o fim das tarefas passaram a usar UTC explícito. Os **32 testes do serviço
+de tarefas** passaram, incluindo a proteção do contrato de timezone, e o
+roundtrip de um datetime UTC consciente preservou o instante exato no banco real.
+Os horários da tarefa de validação foram corrigidos com condição sobre os
+valores anteriores; os demais registros foram preservados. O fluxo dessa
+tarefa, do início do worker à conclusão, levou aproximadamente **23 minutos**.

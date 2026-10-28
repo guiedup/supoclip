@@ -58,6 +58,8 @@ class Config:
         self.youtube_metadata_provider = self._normalize_youtube_metadata_provider(
             os.getenv("YOUTUBE_METADATA_PROVIDER", "yt_dlp")
         )
+        # Local-only session export. Never read cookies from a browser by default.
+        self.youtube_cookie_file = self._get_optional_env("YOUTUBE_COOKIE_FILE")
         # Task creation waits this long for YouTube length metadata. 30s matches
         # the Twitch/Kick preflight deadline and covers yt-dlp's deno step when
         # the backend runs under amd64 emulation.

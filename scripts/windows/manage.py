@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import socket
 import shutil
+import sqlite3
 import subprocess
 import sys
 import time
@@ -86,6 +87,20 @@ def http_ok(url, headers=None):
 def start(config, no_browser):
     from dotenv import dotenv_values
     from redis import Redis
+    session_profile = LOCAL / 'youtube/profile.json'
+    if session_profile.exists():
+        # Explicit opt-in created by youtube_session.py --remember. Never scan
+        # browser profiles, export other sites or change the Firefox database.
+        from youtube_session import export_session
+        try:
+            selected = json.loads(session_profile.read_text(encoding='utf-8'))
+            if not isinstance(selected, dict):
+                raise ValueError('Invalid local session configuration')
+            if selected.get('auto_refresh') is True:
+                export_session(Path(selected['profile']), LOCAL / 'youtube/cookies.txt')
+                print('Refreshed the configured local YouTube session.')
+        except (OSError, RuntimeError, sqlite3.Error, ValueError, KeyError, TypeError):
+            print('YouTube session refresh unavailable; previous export preserved. See the Windows guide.')
     state = json.loads(STATE.read_text()) if STATE.exists() else {}
     env = {**os.environ, 'PYTHONUTF8':'1', 'PYTHONUNBUFFERED':'1',
            'OMP_NUM_THREADS':'2', 'MKL_NUM_THREADS':'2',

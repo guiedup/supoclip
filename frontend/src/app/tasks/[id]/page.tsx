@@ -654,7 +654,7 @@ export default function TaskPage() {
   const sourceVideoUrl = task ? originalVideoUrl(task) : null;
   const hasClips = task?.status === "completed" && clips.length > 0;
   const isActive = task?.status === "processing" || task?.status === "queued";
-  const sourceAccessBlocked = task?.error_code === "youtube_access_required";
+  const sourceAccessBlocked = task?.error_code === "youtube_access_required" || task?.error_code === "youtube_session_invalid";
   const sortedClips = sortBy === "score"
     ? [...clips].sort((a, b) => (b.virality_score ?? 0) - (a.virality_score ?? 0) || a.clip_order - b.clip_order)
     : clips;
@@ -744,7 +744,7 @@ export default function TaskPage() {
                 {t("cancel")}
               </Button>
             )}
-            {(task.status === "cancelled" || task.status === "error") && !sourceAccessBlocked && (
+            {(task.status === "cancelled" || task.status === "error") && (
               <Button size="sm" disabled={pendingAction !== null}
                 onClick={() => void runAction("resume", async () => {
                   try {

@@ -19,17 +19,25 @@ const task = {
   status: "error", clips_count: 0, created_at: "2026-10-28T12:00:00Z", updated_at: "2026-10-28T12:00:00Z",
 };
 
-test("YouTube access failures explain recovery and suppress futile resume", async ({ page }) => {
+test("YouTube access failures explain session refresh and allow an explicit retry", async ({ page }) => {
+  let retries = 0;
+  await page.route("**/api/tasks/blocked/resume", route => {
+    retries++;
+    return route.fulfill({ json: { message: "Task resumed", job_id: "fixture" } });
+  });
   await page.route("**/api/tasks/blocked", route => route.fulfill({ json: {
     ...task, error_code: "youtube_access_required",
     progress_message: "Untrusted provider detail with secret-token-do-not-display",
   } }));
   await page.goto("/tasks/blocked");
-  await expect(page.getByRole("heading", { name: "O YouTube bloqueou esta importação" })).toBeVisible();
-  await expect(page.getByText(/Obtenha o arquivo original/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Retomar", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "O YouTube precisa de uma verificação" })).toBeVisible();
+  await expect(page.getByText(/Atualize a sessão local do YouTube/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retomar", exact: true })).toBeVisible();
   await expect(page.getByText(/secret-token-do-not-display/)).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Voltar ao início" })).toHaveAttribute("href", "/");
+  expect(retries).toBe(0);
+  await page.getByRole("button", { name: "Retomar", exact: true }).click();
+  await expect.poll(() => retries).toBe(1);
 });
 
 test("ordinary processing failures keep the resume action", async ({ page }) => {

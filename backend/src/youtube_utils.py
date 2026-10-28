@@ -19,6 +19,7 @@ from .apify_youtube_downloader import ApifyDownloadError, download_video_via_api
 from .config import get_config
 from .media.ffmpeg import ffprobe_video_size
 from .youtube_errors import YouTubeAccessRequired, requires_youtube_verification
+from .youtube_session import YouTubeSessionError, youtube_dl
 from .youtube_proxy import (
     YOUTUBE_DOWNLOAD_PROVIDER_YTDLP_PROXY,
     ByteBudget,
@@ -303,7 +304,7 @@ def _fetch_video_info_with_ytdlp(url: str, task_id: Optional[str] = None) -> Dic
         raise ValueError(f"Invalid YouTube URL: {url}")
 
     ydl_opts = _build_info_options(task_id)
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    with youtube_dl(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
     return {
@@ -442,6 +443,8 @@ def get_youtube_video_info(
                 )
             return video_info
         except Exception as exc:
+            if isinstance(exc, YouTubeSessionError):
+                raise
             if raise_on_access_error and requires_youtube_verification(exc):
                 raise YouTubeAccessRequired() from None
             last_error = exc
@@ -578,7 +581,7 @@ def _download_youtube_video_with_ytdlp(
                 video_id, int(quality) if quality else None
             )
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            with youtube_dl(ydl_opts) as ydl:
                 ydl.download([url])
 
             logger.info(f"Searching for downloaded file: {video_id}.*")
@@ -726,7 +729,7 @@ def download_youtube_video(
                     logger.info("APIFY_API_TOKEN not set; skipping Apify download for %s", url)
                     continue
                 downloaded_path = download_youtube_video_with_apify(url, video_id, quality)
-        except YouTubeAccessRequired:
+        except (YouTubeAccessRequired, YouTubeSessionError):
             # A human verification requirement must not fan out to proxies or
             # other providers, nor be converted into an uninformative None.
             raise

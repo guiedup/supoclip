@@ -5,7 +5,7 @@ Task service - orchestrates task creation and processing workflow.
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any, Optional, Callable
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import json
 import hashlib
@@ -354,7 +354,7 @@ class TaskService(ClipEditingMixin):
                     await BillingService(self.db, self.config).assert_can_resume_task(
                         user_id, task_id, require_active_plan=False
                     )
-            started_at = datetime.utcnow()
+            started_at = datetime.now(timezone.utc)
             stage_timings: Dict[str, float] = {}
             billing = (
                 await BillingService(self.db, self.config).get_usage_summary(user_id)
@@ -626,7 +626,7 @@ class TaskService(ClipEditingMixin):
             await self.task_repo.update_task_runtime_metadata(
                 self.db,
                 task_id,
-                completed_at=datetime.utcnow(),
+                completed_at=datetime.now(timezone.utc),
                 stage_timings_json=json.dumps(stage_timings),
                 error_code="",
             )
@@ -676,8 +676,8 @@ class TaskService(ClipEditingMixin):
                 raise
             error_code = "task_error"
             message = str(e).lower()
-            if getattr(e, "code", None) == "youtube_access_required":
-                error_code = "youtube_access_required"
+            if getattr(e, "code", None) in {"youtube_access_required", "youtube_session_invalid"}:
+                error_code = e.code
             elif "download" in message or "youtube" in message:
                 error_code = "download_error"
             elif "analysis" in message:
@@ -690,7 +690,7 @@ class TaskService(ClipEditingMixin):
             await self.task_repo.update_task_runtime_metadata(
                 self.db,
                 task_id,
-                completed_at=datetime.utcnow(),
+                completed_at=datetime.now(timezone.utc),
                 error_code=error_code,
             )
             if progress_callback:

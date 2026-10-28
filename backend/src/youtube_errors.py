@@ -2,8 +2,8 @@
 
 YOUTUBE_ACCESS_REQUIRED = (
     "YouTube requires sign-in or human verification "
-    "before this video can be downloaded. Obtain the original video file "
-    "and upload it locally to continue."
+    "before this video can be downloaded. Complete sign-in or verification "
+    "in the browser, refresh the configured local YouTube session, then resume."
 )
 
 

@@ -164,6 +164,9 @@ respondeu HTTP 401, propagado pelo 9Router como 502. TTS não é necessário par
   são o perfil inicial para 16 GB. O consumo total depende dos demais programas abertos.
 - O Next.js limita a busca de arquivos à pasta do projeto e a compilação a uma CPU.
 - O yt-dlp pode reutilizar Node.js quando Deno não está instalado.
+- Início e fim das tarefas são gravados com UTC explícito. No Windows com
+  fuso de São Paulo, datetimes UTC sem timezone eram interpretados pelo asyncpg
+  como horário local e ficavam três horas adiantados no banco.
 - Caminhos de legenda passam pelo escape de filtros FFmpeg original, que já cobre
   letra de unidade, barras, espaços, apóstrofos e colchetes; há teste real no Windows.
 
@@ -172,15 +175,17 @@ respondeu HTTP 401, propagado pelo 9Router como 502. TTS não é necessário par
 O teste curto usa fala sintética e padrão visual do FFmpeg: verifica a execução
 das etapas e os arquivos produzidos, não a qualidade editorial em podcasts reais,
 diarização de múltiplas pessoas ou rastreamento de rosto. Revise legendas antes de publicar.
-Vídeos longos, grandes lotes e suspensão/retomada do PC exigem validação adicional.
+Grandes lotes e suspensão/retomada do PC exigem validação adicional. O teste
+de um vídeo real longo do YouTube está descrito no registro de validação.
 
 O assistente de edição por conversa do upstream usa outro worker e uma configuração
 própria de provedor; não é iniciado por padrão. O worker principal atende os cortes,
 edição manual e exportação. B-roll depende de Pexels; publicação social, e-mail,
 armazenamento S3 e integrações de pagamento precisam de configuração separada.
 Não foram configurados para esta instalação local.
-O download do YouTube depende também das restrições e desafios do serviço; o fluxo
-principal de validação usa upload local. Nenhuma publicação externa é feita pelo teste.
+O download do YouTube depende também das restrições e desafios do serviço.
+A importação por link aceita uma sessão local do YouTube configurada explicitamente.
+Nenhuma publicação externa é feita pelo teste.
 
 ### YouTube pede login ou verificação no download
 
@@ -190,15 +195,63 @@ automático esteja autorizado. Trocar `/live/` por `/watch` mantém o mesmo ID e
 não remove essa exigência.
 
 O backend preserva o erro `youtube_access_required`, sem expor URLs assinadas ou
-detalhes de autenticação. A tarefa mostra uma explicação e deixa de oferecer
-uma retomada que apenas repetiria o mesmo bloqueio. Outros erros continuam com
-a opção de retomar. Nenhum cookie é extraído automaticamente e nenhum outro
-provedor é tentado para contornar a verificação.
+detalhes de autenticação. Não repete automaticamente a tentativa nem troca de
+provedor depois dessa resposta. A tarefa orienta concluir o login ou verificação
+no navegador, atualizar a sessão local e usar **Retomar**.
 
-Para continuar, obtenha o arquivo original com o responsável pelo vídeo e use
-**Enviar um arquivo de vídeo**. Quem administra o canal também pode usar a
+### Conectar a sessão do YouTube no Firefox
+
+1. Abra o vídeo no Firefox, entre na sua conta e conclua pessoalmente qualquer
+   verificação solicitada pelo YouTube.
+2. Em `about:profiles`, identifique o **Diretório raiz** desse perfil. O script
+   não escolhe nem varre os perfis por conta própria.
+3. Na raiz do projeto instalado, execute no PowerShell, substituindo o exemplo:
+
+```powershell
+backend\.venv\Scripts\python.exe scripts\windows\youtube_session.py --profile "$env:APPDATA\Mozilla\Firefox\Profiles\SEU_PERFIL" --remember
+```
+
+O script consulta o SQLite do perfil em modo somente leitura e seleciona apenas
+cookies de `youtube.com` e seus subdomínios, sem cookies de outros sites,
+senhas ou sessões em contêineres do Firefox. Grava um arquivo Netscape privado em
+`.local/youtube/cookies.txt`, com ACL restrita ao usuário do Windows, e configura
+`YOUTUBE_COOKIE_FILE` no `.env` local. Não envie esse arquivo por chat ou ao Git.
+Se o SQLite estiver bloqueado, feche o Firefox e execute o comando novamente.
+
+Na primeira conexão, reinicie o SupoClip quando não houver trabalhos ativos,
+usando `Stop.ps1` e o atalho **SupoClip**. Depois disso, atualizar o mesmo arquivo
+de sessão não exige reiniciar API/worker. O backend carrega os cookies em memória
+para consultas e downloads diretos, sem reescrever o arquivo de sessão ou o
+perfil do navegador. Na ausência de configuração, o comportamento continua anônimo.
+A conexão autenticada mantém a verificação dos certificados TLS habilitada,
+mesmo que as opções originais de download do upstream a desabilitem.
+
+O argumento opcional `--remember` salva o perfil escolhido em
+`.local/youtube/profile.json`. Ao abrir pelo atalho, o launcher atualiza somente
+os cookies do YouTube desse perfil. Sem esse argumento não há atualização
+automática. Para desativá-la, remova esse arquivo de configuração privado.
+Cookies podem expirar ou ser renovados pelo YouTube; após um novo login, abra o
+atalho novamente para atualizar a sessão antes de retomar a tarefa.
+
+Uma sessão indisponível, malformada ou com cookies de outro site é recusada com
+`youtube_session_invalid`, sem expor caminhos/valores nem tentar provedores
+alternativos. Arquivos completos já importados no cache podem continuar sendo
+processados sem consultar o YouTube novamente; o limite de duração é conferido
+com FFprobe sobre o arquivo local. A criação de uma nova tarefa por link ainda
+consulta os metadados do YouTube.
+
+Se o serviço continuar recusando o acesso após a verificação, a importação para
+nesse ponto. A alternativa de upload local continua disponível. Quem administra
+o canal também pode usar a
 [opção oficial de download no YouTube Studio](https://support.google.com/youtube/answer/56100?hl=pt-BR).
 O download offline do YouTube não deve ser tratado como um MP4 disponível para importação.
+
+Para este teste de pregação em português, o perfil local foi ajustado para
+`WHISPER_MODEL_SIZE=base`, `TRANSCRIPTION_LANGUAGE=pt` e `YOUTUBE_MAX_HEIGHT=720`.
+O instalador mantém `tiny` e detecção automática como padrões iniciais. O modelo
+base foi baixado pelo próprio Whisper; tem maior custo de CPU e memória.
+Uma tarefa por vez e duas threads foram mantidas. Para vídeos em outros idiomas,
+limpe `TRANSCRIPTION_LANGUAGE` ou configure o idioma correto antes de reiniciar.
 
 Veja [o registro de validação](windows-validation.md) para os resultados observados.
 
@@ -209,9 +262,17 @@ sem herdar a seleção de Whisper do `.env` particular:
 
 ```powershell
 $env:TRANSCRIPTION_PROVIDER = 'assemblyai'
+$env:YOUTUBE_COOKIE_FILE = ''
+$env:YOUTUBE_MAX_HEIGHT = '1080'
 $env:MAX_CLIPS = '10'
 $env:FAST_MODE_MAX_CLIPS = '10'
 .venv\Scripts\python.exe -m pytest tests/test_native_windows.py tests/unit/test_media_storage.py tests/unit/test_media_replication.py tests/unit/test_source_limits.py tests/unit/test_ffmpeg_filter_escaping.py tests/unit/test_editor_document.py tests/unit/test_ai_models.py tests/unit/test_ai_prompt.py tests/unit/test_ai_retry.py tests/unit/test_config_ollama.py tests/unit/test_clip_editor_captions.py tests/test_video_utils_diarization.py --no-cov -q
+```
+
+Testes adicionais da sessão local e do tratamento de acesso:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/unit/test_youtube_session.py tests/unit/test_youtube_utils.py tests/unit/test_youtube_access_required.py --no-cov -q
 ```
 
 Esses testes não autorizam uma implantação pública nem substituem o teste completo
