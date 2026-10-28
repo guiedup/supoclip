@@ -105,3 +105,33 @@ normal no Windows, sem o modo standalone de contêiner; a opção Linux original
 - O port Redis inclui runtime MSYS2; não é Win32 puro nem uma distribuição oficial Linux.
 - A memória livre inicial estava baixa por outros aplicativos abertos. O perfil usa
   um trabalho por vez e o modelo apenas no worker que transcreve.
+
+## Correção de diagnóstico de importação do YouTube
+
+Um uso posterior encontrou a resposta de verificação humana do YouTube antes de
+qualquer transcrição. O erro genérico de download ocultava essa causa e a página
+oferecia retomar a mesma tentativa. Isso não representou uma validação bem-sucedida
+de importação do YouTube.
+
+A correção preserva `youtube_access_required` no campo de erro já existente,
+interrompe novas tentativas/provedores depois dessa resposta e mostra a orientação
+de usar o arquivo original. Falhas recuperáveis continuam com a opção de retomar.
+Não foram extraídos cookies nem contornada a verificação.
+
+Os **101 testes** de URLs, download, limpeza e classificação de acesso passaram.
+Eles verificam o tratamento de respostas registradas/simuladas; não demonstram
+que um vídeo bloqueado possa ser baixado. Os testes de interface dessa situação
+podem ser executados contra a instalação já iniciada com:
+
+```powershell
+cd frontend
+npm exec --offline -- playwright test --config playwright.native.config.ts
+```
+
+Essa configuração usa Edge já instalado no Windows, simula as respostas de tarefa
+no navegador e não inicializa nem modifica o banco da instalação.
+Os **dois testes de interface passaram**: o bloqueio mostra uma orientação segura
+sem retomar automaticamente, enquanto falhas comuns preservam a retomada.
+O build de produção, lint e TypeScript passaram. A instância local foi reiniciada
+e a tarefa afetada foi conferida visualmente com o erro específico. A importação
+desse vídeo permaneceu bloqueada; nenhum resultado de cortes foi declarado para ele.

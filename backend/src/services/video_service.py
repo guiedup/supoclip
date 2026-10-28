@@ -872,7 +872,9 @@ class VideoService:
                 await progress_callback(10, "Downloading video...", "processing")
 
             if source_type == "youtube":
-                video_info = await async_get_youtube_video_info(url, task_id=task_id)
+                video_info = await async_get_youtube_video_info(
+                    url, task_id=task_id, raise_on_access_error=True
+                )
                 source_duration = None
                 if video_info:
                     duration = video_info.get("duration", 0)

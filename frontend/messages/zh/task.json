@@ -52,6 +52,8 @@
   "cancelledBody": "准备好后可以继续这次生成。",
   "failedTitle": "处理失败",
   "failedBody": "处理视频时出错。可以继续，从停止的地方重试，或换一个视频。",
+  "youtubeAccessTitle": "YouTube 已阻止此次导入",
+  "youtubeAccessBody": "YouTube 要求登录或人工验证才能下载。现在继续只会重复同一次尝试。请获取原始视频文件并在创建页面上传。",
   "backHome": "返回首页",
   "noClipsTitle": "没有生成片段",
   "noClipsBody": "生成已完成，但没有产出片段。这段视频可能没有适合剪辑的内容。",

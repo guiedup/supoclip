@@ -107,6 +107,7 @@ interface TaskDetails {
   status: string;
   progress?: number;
   progress_message?: string;
+  error_code?: string | null;
   clips_count: number;
   source_duration_seconds?: number | null;
   created_at: string;
@@ -653,6 +654,7 @@ export default function TaskPage() {
   const sourceVideoUrl = task ? originalVideoUrl(task) : null;
   const hasClips = task?.status === "completed" && clips.length > 0;
   const isActive = task?.status === "processing" || task?.status === "queued";
+  const sourceAccessBlocked = task?.error_code === "youtube_access_required";
   const sortedClips = sortBy === "score"
     ? [...clips].sort((a, b) => (b.virality_score ?? 0) - (a.virality_score ?? 0) || a.clip_order - b.clip_order)
     : clips;
@@ -742,7 +744,7 @@ export default function TaskPage() {
                 {t("cancel")}
               </Button>
             )}
-            {(task.status === "cancelled" || task.status === "error") && (
+            {(task.status === "cancelled" || task.status === "error") && !sourceAccessBlocked && (
               <Button size="sm" disabled={pendingAction !== null}
                 onClick={() => void runAction("resume", async () => {
                   try {
@@ -816,7 +818,7 @@ export default function TaskPage() {
         ) : task.status === "cancelled" && clips.length === 0 ? (
           <EmptyState icon={<PauseCircle className="size-7" />} title={t("cancelledTitle")} body={t("cancelledBody")} />
         ) : task.status === "error" ? (
-          <EmptyState tone="error" icon={<AlertCircle className="size-7" />} title={t("failedTitle")} body={t("failedBody")}>
+          <EmptyState tone="error" icon={<AlertCircle className="size-7" />} title={t(sourceAccessBlocked ? "youtubeAccessTitle" : "failedTitle")} body={t(sourceAccessBlocked ? "youtubeAccessBody" : "failedBody")}>
             <Button asChild variant="outline"><Link href="/"><ArrowLeft className="size-4" />{t("backHome")}</Link></Button>
           </EmptyState>
         ) : clips.length === 0 ? (

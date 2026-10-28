@@ -52,6 +52,8 @@
   "cancelledBody": "Setz diese Generierung fort, wenn du weitermachen willst.",
   "failedTitle": "Verarbeitung fehlgeschlagen",
   "failedBody": "Beim Verarbeiten deines Videos ist ein Fehler aufgetreten. Setz fort, um ab der Stelle neu zu versuchen, oder nimm ein anderes Video.",
+  "youtubeAccessTitle": "YouTube hat diesen Import blockiert",
+  "youtubeAccessBody": "YouTube verlangt für diesen Download eine Anmeldung oder menschliche Verifizierung. Fortsetzen würde denselben Versuch wiederholen. Lade die Originalvideodatei auf der Erstellungsseite hoch.",
   "backHome": "Zurück zur Startseite",
   "noClipsTitle": "Keine Clips erzeugt",
   "noClipsBody": "Die Generierung ist fertig, aber es wurden keine Clips erzeugt. Das Video hatte vielleicht keinen passenden Inhalt zum Schneiden.",

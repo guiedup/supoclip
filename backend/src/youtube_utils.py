@@ -18,6 +18,7 @@ import yt_dlp
 from .apify_youtube_downloader import ApifyDownloadError, download_video_via_apify
 from .config import get_config
 from .media.ffmpeg import ffprobe_video_size
+from .youtube_errors import YouTubeAccessRequired, requires_youtube_verification
 from .youtube_proxy import (
     YOUTUBE_DOWNLOAD_PROVIDER_YTDLP_PROXY,
     ByteBudget,
@@ -386,13 +387,20 @@ def fetch_video_info(url: str) -> Optional[Dict[str, Any]]:
 async def async_get_youtube_video_info(
     url: str,
     task_id: Optional[str] = None,
+    *,
+    raise_on_access_error: bool = False,
 ) -> Optional[Dict[str, Any]]:
-    return await asyncio.to_thread(get_youtube_video_info, url, task_id)
+    return await asyncio.to_thread(
+        get_youtube_video_info, url, task_id,
+        raise_on_access_error=raise_on_access_error,
+    )
 
 
 def get_youtube_video_info(
     url: str,
     task_id: Optional[str] = None,
+    *,
+    raise_on_access_error: bool = False,
 ) -> Optional[Dict[str, Any]]:
     video_id = get_youtube_video_id(url)
     if not video_id:
@@ -434,6 +442,8 @@ def get_youtube_video_info(
                 )
             return video_info
         except Exception as exc:
+            if raise_on_access_error and requires_youtube_verification(exc):
+                raise YouTubeAccessRequired() from None
             last_error = exc
             if index == 0:
                 logger.warning(
@@ -546,6 +556,7 @@ def _download_youtube_video_with_ytdlp(
     video_info = get_youtube_video_info(
         url,
         task_id=task_id,
+        raise_on_access_error=True,
     )
     if not video_info:
         logger.error(f"Could not retrieve video information for: {url}")
@@ -601,6 +612,8 @@ def _download_youtube_video_with_ytdlp(
             logger.warning("No video file found after download attempt %s", attempt + 1)
 
         except yt_dlp.utils.DownloadError as e:
+            if requires_youtube_verification(e):
+                raise YouTubeAccessRequired() from None
             last_error = str(e)
             logger.warning("Download attempt %s failed: %s", attempt + 1, e)
             if attempt < max_retries - 1:
@@ -713,6 +726,10 @@ def download_youtube_video(
                     logger.info("APIFY_API_TOKEN not set; skipping Apify download for %s", url)
                     continue
                 downloaded_path = download_youtube_video_with_apify(url, video_id, quality)
+        except YouTubeAccessRequired:
+            # A human verification requirement must not fan out to proxies or
+            # other providers, nor be converted into an uninformative None.
+            raise
         except DownloadBudgetExceeded as exc:
             _note_attempt(provider, video_id, task_id, job_budget, before, outcome="failure", error=str(exc))
             raise
@@ -723,6 +740,8 @@ def download_youtube_video(
             continue
         except Exception as exc:
             _note_attempt(provider, video_id, task_id, job_budget, before, outcome="failure", error=str(exc))
+            if requires_youtube_verification(exc):
+                raise YouTubeAccessRequired() from None
             logger.warning(
                 "%s download failed for %s: %s", provider, url, redact_secrets(str(exc)),
             )

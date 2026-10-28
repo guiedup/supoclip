@@ -52,6 +52,8 @@
   "cancelledBody": "Resume this generation when you are ready to continue.",
   "failedTitle": "Processing Failed",
   "failedBody": "There was an error processing your video. Resume to retry from where it stopped, or try another video.",
+  "youtubeAccessTitle": "YouTube blocked this import",
+  "youtubeAccessBody": "YouTube requires sign-in or human verification for this download. Resuming now would repeat the same attempt. Obtain the original video file and upload it from the creation page.",
   "backHome": "Back to Home",
   "noClipsTitle": "No Clips Generated",
   "noClipsBody": "The generation completed but no clips were generated. The video may not have had suitable content for clipping.",

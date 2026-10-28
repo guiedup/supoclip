@@ -52,6 +52,8 @@
   "cancelledBody": "Retome esta geração quando quiser continuar.",
   "failedTitle": "Falha no processamento",
   "failedBody": "Houve um erro ao processar seu vídeo. Retome para tentar de onde parou, ou experimente outro vídeo.",
+  "youtubeAccessTitle": "O YouTube bloqueou esta importação",
+  "youtubeAccessBody": "O YouTube exigiu login ou verificação humana para este download. Retomar agora repetiria a mesma tentativa. Obtenha o arquivo original e envie pela tela de criação.",
   "backHome": "Voltar ao início",
   "noClipsTitle": "Nenhum clipe gerado",
   "noClipsBody": "A geração terminou, mas nenhum clipe foi criado. O vídeo pode não ter tido conteúdo adequado para recortar.",

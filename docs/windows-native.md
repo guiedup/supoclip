@@ -182,6 +182,24 @@ Não foram configurados para esta instalação local.
 O download do YouTube depende também das restrições e desafios do serviço; o fluxo
 principal de validação usa upload local. Nenhuma publicação externa é feita pelo teste.
 
+### YouTube pede login ou verificação no download
+
+Se o serviço responder `Sign in to confirm you're not a bot`, a importação para
+antes da transcrição. Abrir a página no navegador não comprova que o download
+automático esteja autorizado. Trocar `/live/` por `/watch` mantém o mesmo ID e
+não remove essa exigência.
+
+O backend preserva o erro `youtube_access_required`, sem expor URLs assinadas ou
+detalhes de autenticação. A tarefa mostra uma explicação e deixa de oferecer
+uma retomada que apenas repetiria o mesmo bloqueio. Outros erros continuam com
+a opção de retomar. Nenhum cookie é extraído automaticamente e nenhum outro
+provedor é tentado para contornar a verificação.
+
+Para continuar, obtenha o arquivo original com o responsável pelo vídeo e use
+**Enviar um arquivo de vídeo**. Quem administra o canal também pode usar a
+[opção oficial de download no YouTube Studio](https://support.google.com/youtube/answer/56100?hl=pt-BR).
+O download offline do YouTube não deve ser tratado como um MP4 disponível para importação.
+
 Veja [o registro de validação](windows-validation.md) para os resultados observados.
 
 ## Testes

@@ -52,6 +52,8 @@
   "cancelledBody": "Lanjutkan generasi ini saat kamu siap.",
   "failedTitle": "Pemrosesan gagal",
   "failedBody": "Ada error saat memproses videomu. Lanjutkan untuk mencoba lagi dari titik berhenti, atau coba video lain.",
+  "youtubeAccessTitle": "YouTube memblokir impor ini",
+  "youtubeAccessBody": "YouTube meminta login atau verifikasi manusia untuk unduhan ini. Melanjutkan sekarang hanya mengulangi percobaan yang sama. Dapatkan file video asli dan unggah melalui halaman pembuatan.",
   "backHome": "Kembali ke beranda",
   "noClipsTitle": "Tidak ada clip yang dihasilkan",
   "noClipsBody": "Generasi selesai, tapi tidak ada clip yang dihasilkan. Videonya mungkin tidak punya konten yang cocok untuk di-clip.",

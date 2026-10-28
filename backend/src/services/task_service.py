@@ -676,7 +676,9 @@ class TaskService(ClipEditingMixin):
                 raise
             error_code = "task_error"
             message = str(e).lower()
-            if "download" in message or "youtube" in message:
+            if getattr(e, "code", None) == "youtube_access_required":
+                error_code = "youtube_access_required"
+            elif "download" in message or "youtube" in message:
                 error_code = "download_error"
             elif "analysis" in message:
                 error_code = "analysis_error"
