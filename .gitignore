@@ -25,3 +25,7 @@ docs/youtube-provider-registry*.json
 
 # Local agent checkouts
 .claude/worktrees/
+
+# Native Windows installation state, credentials, databases and validation media
+.local/
+frontend/.next-dev/

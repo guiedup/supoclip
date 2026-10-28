@@ -181,6 +181,13 @@ def _get_whisper_model(model_name: str = "base"):
             "Whisper is not installed. Install it with: uv add openai-whisper"
         )
     if model_name not in _WHISPER_MODEL_CACHE:
+        global _whisper
+        if _whisper is None:
+            import whisper as _whisper
+        import os
+        if os.getenv("WHISPER_CPU_THREADS"):
+            import torch
+            torch.set_num_threads(max(1, int(os.environ["WHISPER_CPU_THREADS"])))
         logger.info("Loading Whisper model: %s", model_name)
         _WHISPER_MODEL_CACHE[model_name] = _whisper.load_model(model_name)
     return _WHISPER_MODEL_CACHE[model_name]
@@ -330,6 +337,15 @@ def get_video_transcript(
     logger.info(f"Getting transcript for: {video_path}")
     runtime_config = get_config()
     provider = runtime_config.transcription_provider
+
+    if provider == "openai_compatible":
+        from .remote_transcription import transcribe_openai_compatible
+
+        result = transcribe_openai_compatible(
+            _prepare_audio_for_transcription(video_path), runtime_config
+        )
+        cache_transcript_data(video_path, result)
+        return "\n".join(format_transcript_for_analysis(result))
 
     if provider == "whisper":
         return _get_transcript_with_whisper(video_path, runtime_config)

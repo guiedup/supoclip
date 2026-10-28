@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 import createNextIntlPlugin from "next-intl/plugin";
 import { withPostHogConfig } from "@posthog/nextjs-config";
 
@@ -19,8 +20,10 @@ const posthogRewrites = isPostHogEnabled
   : [];
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: process.platform === "win32" ? path.resolve(__dirname, "..") : undefined,
+  experimental: process.platform === "win32" ? { cpus: 1 } : {},
   distDir: process.env.NEXT_BUILD_DIR || ".next",
-  output: 'standalone',
+  output: process.platform === "win32" ? undefined : "standalone",
   // Keep canonical tags in the initial <head>, including for Googlebot.
   htmlLimitedBots: /.*/,
   // PostHog's API paths end in a slash (e.g. /e/); don't redirect them.

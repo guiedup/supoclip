@@ -9,7 +9,8 @@ acknowledge the exact revision. Credentials and signed URLs are never logged.
 from __future__ import annotations
 
 from contextlib import contextmanager
-import fcntl
+from . import file_lock as fcntl
+from .utils.filesystem import durable_replace
 import hashlib
 import json
 import logging
@@ -73,15 +74,9 @@ class ReplicatedMediaClient:
                 json.dump(manifest, stream, allow_nan=False)
                 stream.flush()
                 os.fsync(stream.fileno())
-            temporary.replace(directory / "pending.json")
+            durable_replace(temporary, directory / "pending.json")
         finally:
             temporary.unlink(missing_ok=True)
-        # Also persist the directory entry, not only the payload/manifest data.
-        fd = os.open(directory, os.O_RDONLY)
-        try:
-            os.fsync(fd)
-        finally:
-            os.close(fd)
 
     def _stage(self, directory, path, key, extra, *, pending=None, adopt=False):
         if adopt and (path.parent != directory or path.suffix != ".part"):
@@ -91,7 +86,8 @@ class ReplicatedMediaClient:
         temporary = path if adopt else directory / (uuid.uuid4().hex + ".part")
         try:
             if adopt:
-                with temporary.open("rb") as stream:
+                # Windows' _commit requires a writable descriptor.
+                with temporary.open("r+b") as stream:
                     os.fsync(stream.fileno())
             else:
                 with path.open("rb") as source, temporary.open("wb") as target:

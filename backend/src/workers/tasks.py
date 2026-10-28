@@ -3,6 +3,7 @@ Worker tasks - background jobs processed by arq workers.
 """
 
 import logging
+import os
 from typing import Dict, Any, Optional
 import json
 from arq import Retry, cron
@@ -242,7 +243,7 @@ class WorkerSettings:
     job_timeout = 10800  # 3 hour timeout for video processing
 
     # Worker pool settings
-    max_jobs = 4  # Process up to 4 jobs simultaneously
+    max_jobs = max(1, int(os.getenv("WORKER_MAX_JOBS", "4")))
     cron_jobs = [
         cron(check_media_storage, second=20, run_at_startup=True, timeout=120),
         cron(replicate_pending_media, second=40, run_at_startup=True, timeout=1800),

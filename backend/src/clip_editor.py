@@ -45,7 +45,9 @@ def _safe_name(prefix: str) -> str:
 
 
 def _run(command: list[str]) -> None:
-    subprocess.run(command, check=True, capture_output=True, text=True)
+    from .media.ffmpeg import run_ffmpeg_command
+    result = run_ffmpeg_command(command)
+    result.check_returncode()
 
 
 def _ffprobe_duration(path: Path) -> float:

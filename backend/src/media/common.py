@@ -34,13 +34,11 @@ import srt
 
 from datetime import timedelta
 
-try:
-    import whisper as _whisper
+# Remote transcription must not load PyTorch into every API/worker process.
+from importlib.util import find_spec
 
-    _WHISPER_AVAILABLE = True
-except ImportError:  # pragma: no cover - optional transcription backend
-    _whisper = None
-    _WHISPER_AVAILABLE = False
+_whisper = None
+_WHISPER_AVAILABLE = find_spec("whisper") is not None
 
 from ..config import get_config
 

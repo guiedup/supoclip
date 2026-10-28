@@ -32,6 +32,7 @@ dependencies = [
     "requests>=2.32.0",
     "cryptography>=50.0.0",
     "posthog>=7.73.2",
+    "portalocker>=3.2.0,<4",
 ]
 
 [project.optional-dependencies]

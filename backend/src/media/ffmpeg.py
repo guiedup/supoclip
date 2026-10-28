@@ -9,6 +9,7 @@ from ..config import get_config
 import json
 import re
 import subprocess
+import os
 from .common import (
     AUDIO_BITRATE,
     CROSSFADE_MAX_SECONDS,
@@ -35,10 +36,17 @@ def clamp_even(value: int, minimum: int, maximum: int) -> int:
 
 def run_ffmpeg_command(command: List[str], timeout: int = 900) -> subprocess.CompletedProcess:
     """Run ffmpeg/ffprobe and log stderr on failure."""
+    if Path(command[0]).stem.lower() == "ffmpeg" and os.getenv("FFMPEG_THREADS"):
+        threads = str(max(1, int(os.environ["FFMPEG_THREADS"])))
+        command = [command[0], "-filter_threads", threads,
+                   "-filter_complex_threads", threads, *command[1:]]
+        command = [*command[:-1], "-threads", threads, command[-1]]
     result = subprocess.run(
         command,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
     )
     if result.returncode != 0:

@@ -12,7 +12,7 @@ stored original is capped again the next time it is prepared.
 
 from __future__ import annotations
 
-import fcntl
+from .. import file_lock as fcntl
 import json
 import logging
 import os

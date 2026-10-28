@@ -9,7 +9,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Annotated, Literal
-import fcntl
+from . import file_lock as fcntl
 import hashlib
 import json
 import os
@@ -416,7 +416,7 @@ def run_render(command: list[str], directory: Path, job_id: str, duration: float
         # sleep) must be started unchanged or GNU sleep rejects the extra args
         # and the cancel path never runs.
         launched = list(command)
-        if command and Path(command[0]).name == "ffmpeg":
+        if command and Path(command[0]).stem.lower() == "ffmpeg":
             launched = command[:1] + ["-progress", str(progress_path), "-nostats"] + command[1:]
         process = subprocess.Popen(
             launched,
@@ -457,6 +457,8 @@ def run_render(command: list[str], directory: Path, job_id: str, duration: float
                     process.kill()
                     process.wait()
             progress_path.unlink(missing_ok=True)
+            # Windows cannot unlink an open file, even from the same process.
+            log.close()
             log_path.unlink(missing_ok=True)
 
 
@@ -466,6 +468,8 @@ def render_document(
     document: EditDocument,
     preset: str,
     broll_files: dict[str, Path] | None = None,
+    *,
+    job_directory: Path | None = None,
 ):
     """Render a draft. ``broll_files`` maps footage keys to local files; B-roll
     whose footage is missing is left out rather than failing the export."""
@@ -593,10 +597,11 @@ def render_document(
         str(temporary),
     ]
     try:
+        control_directory = job_directory or directory
         run_render(
-            command, directory, job_id, sum(s.end - s.start for s in document.segments)
+            command, control_directory, job_id, sum(s.end - s.start for s in document.segments)
         )
-        if (directory / f"cancel-{job_id}").exists():
+        if (control_directory / f"cancel-{job_id}").exists():
             raise InterruptedError("Export cancelled")
         temporary.replace(output)
     except BaseException:

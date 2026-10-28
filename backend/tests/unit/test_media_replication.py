@@ -1,6 +1,6 @@
 """Outage and recovery contracts; no real cloud or production database calls."""
 from datetime import datetime, timezone
-import fcntl
+from src import file_lock as fcntl
 from io import BytesIO
 import hashlib
 import json

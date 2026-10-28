@@ -1,3 +1,7 @@
+> **Windows native fork:** see [Windows installation and 9Router integration](docs/windows-native.md).
+> Original SupoClip by [FujiwaraChoki and contributors](https://github.com/FujiwaraChoki/supoclip).
+> This fork preserves the original credits and AGPL-3.0 license. It is an independent compatibility adaptation.
+
 <p align="center">
   <a href="https://www.supoclip.com">
     <img src="assets/banner.jpg" alt="SupoClip dashboard with video input, caption controls, and recent clips" width="100%" />

@@ -17,11 +17,13 @@ from pydantic_ai.models import Model
 from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.models.ollama import OllamaModel
 from pydantic_ai.models.openrouter import OpenRouterModel
+from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.profiles.openai import OpenAIModelProfile
 from pydantic_ai.profiles.anthropic import AnthropicModelProfile
 from pydantic_ai.providers.anthropic import AnthropicProvider
 from pydantic_ai.providers.ollama import OllamaProvider
 from pydantic_ai.providers.openrouter import OpenRouterProvider
+from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 from .config import Config, get_config
@@ -509,6 +511,14 @@ def _build_transcript_model(
 ) -> Model | str:
     model_name = model_name or runtime_config.llm
     provider, provider_model_name = _split_llm_name(model_name)
+    if provider == "openai" and runtime_config.openai_base_url:
+        return OpenAIChatModel(
+            provider_model_name,
+            provider=OpenAIProvider(
+                base_url=runtime_config.openai_base_url,
+                api_key=runtime_config.openai_api_key,
+            ),
+        )
     if provider == "anthropic" and _uses_native_output(model_name):
         # The installed SDK predates Sonnet 5.5. This model requires native
         # structured output rather than forced tool calls.
@@ -568,6 +578,7 @@ def get_transcript_agent(clip_length: str = "auto") -> Agent[None, TranscriptAna
         clip_length,
         runtime_config.llm,
         runtime_config.openai_api_key,
+        runtime_config.openai_base_url,
         runtime_config.openrouter_api_key,
         runtime_config.openrouter_fallback_model,
         runtime_config.google_api_key,
@@ -648,6 +659,7 @@ def get_rerank_agent() -> Agent[None, CandidateRanking]:
     signature = (
         model_name,
         runtime_config.openai_api_key,
+        runtime_config.openai_base_url,
         runtime_config.openrouter_api_key,
         runtime_config.openrouter_fallback_model,
         runtime_config.google_api_key,
@@ -723,6 +735,7 @@ def get_broll_agent() -> Agent[None, BRollPlan]:
     signature = (
         model_name,
         runtime_config.openai_api_key,
+        runtime_config.openai_base_url,
         runtime_config.openrouter_api_key,
         runtime_config.openrouter_fallback_model,
         runtime_config.google_api_key,

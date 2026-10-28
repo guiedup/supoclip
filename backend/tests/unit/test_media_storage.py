@@ -4,7 +4,7 @@ import asyncio
 import os
 import time
 from datetime import datetime, timezone, timedelta
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from types import SimpleNamespace
 from unittest.mock import Mock
 from urllib.parse import urlsplit
@@ -342,7 +342,7 @@ def test_orphan_scan_only_queues_individual_render_directories(storage, relative
             if key.startswith(Prefix) else []}
     storage.client.get_paginator = Mock(return_value=SimpleNamespace(paginate=paginate))
     candidates = list(orphan_candidates(storage))
-    assert candidates == ([(storage.reference(str(Path(key).parent)), True)] if expected else [])
+    assert candidates == ([(storage.reference(str(PurePosixPath(key).parent)), True)] if expected else [])
 
 
 def test_transient_head_failure_keeps_a_completed_upload_for_retry(storage):
@@ -503,15 +503,15 @@ async def test_failed_analysis_preserves_source_timings_and_retries_upload(stora
     storage.client.upload_file = upload
     storage.sync_source_metadata()
     assert not (path.parent / ".metadata-pending").exists()
-    assert b"Paid transcription" in storage.client.objects[str(Path(key).with_suffix(".transcript_cache.json"))]
+    assert b"Paid transcription" in storage.client.objects[str(PurePosixPath(key).with_suffix(".transcript_cache.json"))]
 
 
 def test_optional_reader_blocks_lease_release_until_metadata_read_finishes(storage):
     from src.media_storage import _release_workspace
-    import fcntl
+    from src import file_lock as fcntl
     key = storage.key("clips", "task", "upload", "video.mp4")
     storage.client.objects[key] = b"video"
-    storage.client.objects[str(Path(key).with_suffix(".source_map.json"))] = b'{}'
+    storage.client.objects[str(PurePosixPath(key).with_suffix(".source_map.json"))] = b'{}'
     with storage.read_path(storage.reference(key), metadata_only=True) as path:
         handle = (path.parent / ".lease").open("a")
         fcntl.flock(handle, fcntl.LOCK_SH)

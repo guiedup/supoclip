@@ -1,6 +1,7 @@
 import shutil
 import subprocess
-from pathlib import Path
+import os
+from pathlib import Path, PurePosixPath
 
 import pytest
 
@@ -19,7 +20,7 @@ def test_escapes_windows_drive_and_separators_for_both_parse_levels():
 
 
 def test_escapes_filtergraph_separators():
-    escaped = ffmpeg_escape_filter_path(Path("/tmp/a,b;[c]/x.ass"))
+    escaped = ffmpeg_escape_filter_path(PurePosixPath("/tmp/a,b;[c]/x.ass"))
 
     assert escaped == r"/tmp/a\,b\;\[c\]/x.ass"
 
@@ -41,7 +42,7 @@ Dialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,0,,Hi
 
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not installed")
 def test_ffmpeg_opens_subtitles_from_awkward_directory(tmp_path):
-    awkward = tmp_path / "it's [a], b; c:d \\ e"
+    awkward = tmp_path / ("it's [a], b; c d" if os.name == "nt" else "it's [a], b; c:d \\ e")
     awkward.mkdir()
     ass_path = awkward / "captions.ass"
     ass_path.write_text(ASS)

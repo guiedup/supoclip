@@ -291,6 +291,9 @@ def base_proxy_params(task_id: Optional[str] = None, video_id: Optional[str] = N
         # yt-dlp needs a JS runtime for YouTube's player challenge. Prefer the
         # deno binary installed in the image; do not pin a player client.
         params["js_runtimes"] = {"deno": {}}
+    elif shutil.which("node"):
+        # Reuse the native Node runtime needed by the Windows frontend.
+        params["js_runtimes"] = {"node": {}}
     return params
 
 

@@ -14,6 +14,11 @@ DOCKER_OLLAMA_BASE_URL = "http://host.docker.internal:11434/v1"
 class Config:
     def __init__(self):
         self.openai_api_key = self._get_runtime_setting("OPENAI_API_KEY")
+        self.openai_base_url = self._get_optional_env("OPENAI_BASE_URL")
+        self.stt_base_url = self._get_optional_env("STT_BASE_URL")
+        self.stt_api_key = self._get_optional_env("STT_API_KEY")
+        self.stt_model = self._get_optional_env("STT_MODEL")
+        self.stt_timeout_seconds = int(os.getenv("STT_TIMEOUT_SECONDS", "300"))
         self.openrouter_api_key = self._get_runtime_setting("OPENROUTER_API_KEY")
         self.openrouter_fallback_model = self._get_optional_env("OPENROUTER_FALLBACK_MODEL") or "openai/gpt-6-luna"
         self.anthropic_api_key = self._get_runtime_setting("ANTHROPIC_API_KEY")
@@ -387,7 +392,7 @@ class Config:
     @staticmethod
     def _normalize_transcription_provider(value: str | None) -> str:
         normalized = (value or "").strip().lower().replace("-", "_")
-        if normalized in ("whisper", "youtube_captions"):
+        if normalized in ("whisper", "youtube_captions", "openai_compatible"):
             return normalized
         return "assemblyai"
 

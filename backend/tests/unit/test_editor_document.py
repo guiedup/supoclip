@@ -284,7 +284,10 @@ def test_real_render_preserves_cuts_dimensions_and_audio(tmp_path, audio):
         framing={"aspect": "original", "fit": "cover", "zoom": 1.2, "x": 0.2},
         muted=True,
     )
-    render_document(tmp_path, "a" * 32, doc, "tiktok")
+    control = tmp_path / "job-control" if audio else tmp_path
+    control.mkdir(exist_ok=True)
+    render_document(tmp_path, "a" * 32, doc, "tiktok", job_directory=control)
+    assert (control / f"job-{'a' * 32}.json").exists()
     output = tmp_path / f"export-{'a' * 32}.mp4"
     probe = json.loads(
         subprocess.run(
@@ -331,11 +334,12 @@ def test_real_render_preserves_cuts_dimensions_and_audio(tmp_path, audio):
 
 def test_cancelled_render_does_not_publish_output(tmp_path):
     from src.editor_document import run_render
+    import sys
 
     job_id = "b" * 32
     (tmp_path / f"cancel-{job_id}").touch()
     with pytest.raises(InterruptedError):
-        run_render(["sleep", "10"], tmp_path, job_id, 1)
+        run_render([sys.executable, "-c", "import time; time.sleep(10)"], tmp_path, job_id, 1)
     assert not (tmp_path / f"export-{job_id}.mp4").exists()
 
 

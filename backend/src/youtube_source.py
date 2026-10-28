@@ -8,7 +8,7 @@ and download a new range only when the cut extends past what is stored.
 
 from __future__ import annotations
 
-import fcntl
+from . import file_lock as fcntl
 import json
 import logging
 import shutil
