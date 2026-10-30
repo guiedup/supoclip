@@ -5,6 +5,8 @@ import { nextCookies } from "better-auth/next-js";
 import { getAuthTrustedOrigins } from "@/lib/auth-origins";
 import { prepareAccountDeletion } from "@/server/account-deletion";
 import { fetchBackend } from "@/server/backend-api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { assertLocalSessionRequest, getLocalOwnerSession, isLocalAutoLoginEnabled } from "@/server/local-session";
 
 const disableSignUp = ["1", "true", "yes"].includes(
   (process.env.DISABLE_SIGN_UP ?? "").toLowerCase()
@@ -35,6 +37,16 @@ const trustedOrigins = getAuthTrustedOrigins({
 });
 
 export const auth = betterAuth({
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (!isLocalAutoLoginEnabled()) return;
+      assertLocalSessionRequest(ctx.headers, ctx.request?.url);
+      if (ctx.path !== "/get-session") {
+        throw new APIError("FORBIDDEN", { message: "Account authentication is disabled in local mode" });
+      }
+      return ctx.json(await getLocalOwnerSession());
+    }),
+  },
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),

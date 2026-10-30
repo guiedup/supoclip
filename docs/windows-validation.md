@@ -224,3 +224,31 @@ roundtrip de um datetime UTC consciente preservou o instante exato no banco real
 Os horários da tarefa de validação foram corrigidos com condição sobre os
 valores anteriores; os demais registros foram preservados. O fluxo dessa
 tarefa, do início do worker à conclusão, levou aproximadamente **23 minutos**.
+
+## Modo pessoal com entrada automática (30/10/2026)
+
+A configuração privada desta instalação habilita `NEXT_PUBLIC_LOCAL_AUTO_LOGIN`
+e vincula `LOCAL_AUTO_LOGIN_USER_ID` ao proprietário que já tinha as três tarefas
+da biblioteca. A conta não foi recriada nem substituída. A identificação de
+proprietário e a assinatura HMAC entre frontend e API foram preservadas.
+
+**29 testes unitários/de integração** passaram para a sessão local, o mecanismo
+real do Better Auth, origens e o fluxo normal de autenticação com o modo desligado.
+A compilação de produção passou com lint e TypeScript. **Quatro testes de
+navegador** passaram contra o aplicativo instalado, sem semear o banco:
+
+- Um contexto novo abre a criação e acessa preferências/biblioteca sem login.
+- Limpar cookies e abrir outro contexto continua usando o mesmo proprietário.
+- Entrar/cadastrar/recuperar senha redirecionam ao aplicativo; sair e excluir a
+  conta ficam ocultos. A tela de configurações foi aguardada antes dessa verificação.
+- Origem/host externos são recusados; a API direta continua recusando requisição
+  sem autenticação assinada (HTTP 401).
+
+Uma solicitação HTTP sem cookies confirmou a conta existente, ausência de cookie
+de sessão novo e `Cache-Control: private, no-store`. O modo é ativado somente
+para esta instalação local, conforme as opções em [windows-native.md](windows-native.md#uso-pessoal-sem-tela-de-login).
+
+Um navegador novo, sem senha nem `storageState`, também abriu a tarefa real do
+YouTube, preservou os dois clipes, reproduziu o vídeo e abriu o editor de legendas
+com os tempos por palavra. A captura e o resultado dessa conferência ficam em
+`.local/validation/personal-local-library.png` e `personal-local-validation.json`.

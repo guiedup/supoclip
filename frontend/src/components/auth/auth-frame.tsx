@@ -2,9 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ClipCutAnimation } from "@/components/auth/clip-cut-animation";
+import { isLocalAutoLoginEnabled } from "@/server/local-session";
+import { redirect } from "next/navigation";
 
 /** Split-screen frame for sign-in and sign-up: form on the left, product showcase on the right. */
 export async function AuthFrame({ children, footer }: { children: React.ReactNode; footer: React.ReactNode }) {
+  if (isLocalAutoLoginEnabled()) redirect("/");
   const t = await getTranslations("auth");
   return (
     <div className="grid min-h-dvh bg-background lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">

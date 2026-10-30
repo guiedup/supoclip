@@ -36,6 +36,7 @@ import { track } from "@/lib/datafast";
 import Link from "next/link";
 import { AlertCircle, Bot, Check, ChevronRight, Clock, CreditCard, Languages, Loader2, Mail, Megaphone, Share2, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isLocalAutoLoginClientEnabled } from "@/lib/local-mode";
 import { FontSelectOption, type FontOption } from "@/components/font-select-option";
 
 interface UserPreferences {
@@ -589,13 +590,13 @@ export default function SettingsPage() {
           <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
         </Link>
 
-        <DeleteAccountSection
+        {!isLocalAutoLoginClientEnabled() && <DeleteAccountSection
           email={session.user.email}
           hasAppStoreSubscription={
             billingSummary?.subscription_provider === "apple" &&
             ["active", "trialing", "past_due"].includes(billingSummary.subscription_status)
           }
-        />
+        />}
 
         {error && (
           <Alert className="border-red-200 bg-red-50">

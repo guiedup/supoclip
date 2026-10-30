@@ -41,6 +41,41 @@ O processo de parada verifica os PIDs e a data de criação dos processos inicia
 por esta instalação. Não encerra o 9Router compartilhado nem o PostgreSQL de outros aplicativos.
 Não pare durante um render manual externo ao worker.
 
+## Uso pessoal sem tela de login
+
+A instalação pessoal pode abrir diretamente na conta local que já possui os
+vídeos. Em `frontend/.env.local`, configure explicitamente:
+
+```dotenv
+SELF_HOST=true
+NEXT_PUBLIC_SELF_HOST=true
+NEXT_PUBLIC_LOCAL_AUTO_LOGIN=true
+LOCAL_AUTO_LOGIN_USER_ID=ID_DA_CONTA_EXISTENTE
+BETTER_AUTH_URL=http://localhost:3107
+NEXT_PUBLIC_APP_URL=http://localhost:3107
+```
+
+O ID é o `user_id` das tarefas dessa conta. Não é criada outra conta nem movida
+a biblioteca. Depois de alterar o modo, compile novamente o frontend e reinicie
+a instalação quando não houver processamento ativo. A opção fica desativada
+por padrão no código compartilhado; a configuração privada desta máquina a ativa.
+
+O navegador recebe uma sessão local renovável sem pedir senha nem depender de
+cookies de login. Uma janela anônima ou um navegador novo usa a mesma conta
+selecionada. As páginas de entrar/cadastrar/recuperar senha redirecionam para o
+aplicativo; sair e excluir a conta ficam ocultos nesse modo. Endpoints de gestão
+de autenticação também são recusados, evitando perder o proprietário da biblioteca.
+
+A entrada automática exige instalação self-host, URLs e requisições de loopback
+(`localhost`/`127.0.0.1`, na porta configurada). Requisições de origem externa,
+hosts encaminhados externos e acesso cross-site são recusados. A identificação
+da conta para a API continua assinada pelo frontend; a API não aceita um ID de
+usuário sem assinatura. Para voltar ao login normal, configure
+`NEXT_PUBLIC_LOCAL_AUTO_LOGIN=false` e recompile/reinicie o frontend.
+
+Esse modo trata o login do **SupoClip**. A sessão do YouTube usada para importar
+vídeos continua sendo configurada separadamente, conforme a seção abaixo.
+
 ## Serviços e dados isolados
 
 | Componente | Endereço nesta instalação | Observação |

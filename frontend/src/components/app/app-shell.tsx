@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
+import { isLocalAutoLoginClientEnabled } from "@/lib/local-mode";
 
 // `mobile: false` keeps an item out of the five-slot mobile tab bar.
 // `social: true` items only show when social publishing is enabled for the user.
@@ -225,6 +226,7 @@ function UsageCard({ billing }: { billing: NonNullable<ReturnType<typeof useBill
 }
 
 function UserRow({ compact, name, email }: { compact: boolean; name?: string | null; email?: string | null }) {
+  const localMode = isLocalAutoLoginClientEnabled();
   const t = useTranslations("shell");
   const [signingOut, setSigningOut] = useState(false);
   const handleSignOut = async () => {
@@ -240,10 +242,10 @@ function UserRow({ compact, name, email }: { compact: boolean; name?: string | n
       {!compact && (
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-sm font-medium">{name || t("user.creator")}</p>
-          <p className="truncate text-xs text-muted-foreground">{email}</p>
+          <p className="truncate text-xs text-muted-foreground">{localMode ? "localhost" : email}</p>
         </div>
       )}
-      <Tooltip>
+      {!localMode && <Tooltip>
         <TooltipTrigger asChild>
           <button type="button" onClick={() => void handleSignOut()} disabled={signingOut} aria-label={t("user.signOut")}
             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground disabled:opacity-50">
@@ -251,7 +253,7 @@ function UserRow({ compact, name, email }: { compact: boolean; name?: string | n
           </button>
         </TooltipTrigger>
         <TooltipContent side={compact ? "right" : "top"}>{signingOut ? t("user.signingOut") : t("user.signOut")}</TooltipContent>
-      </Tooltip>
+      </Tooltip>}
     </div>
   );
 }
